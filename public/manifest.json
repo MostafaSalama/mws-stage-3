@@ -1,0 +1,36 @@
+{
+  "short_name": "Restaurants Reviews",
+  "name": "Restaurants Reviews",
+  "background_color":"#F3F3F3",
+  "theme_color":"#9c27b0",
+  "display":"fullscreen",
+  "icons": [
+    {
+      "src": "/icons/plate-fork-and-knife50x50.png",
+      "type": "image/png",
+      "sizes": "50x50"
+    },
+    {
+      "src": "/icons/plate-fork-and-knife128x128.png",
+      "type": "image/png",
+      "sizes": "128x128"
+    },
+    {
+      "src": "/icons/plate-fork-and-knife152x152.png",
+      "type": "image/png",
+      "sizes": "152x152"
+    },
+    {
+      "src": "/icons/plate-fork-and-knife192x192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    }
+  ,
+    {
+      "src": "/icons/plate-fork-and-knife512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/index.html"
+}
