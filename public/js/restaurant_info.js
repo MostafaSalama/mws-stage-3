@@ -1,9 +1,17 @@
 let restaurant;
-var map;
+let map;
 
 /**
  * Initialize Google map, called from HTML.
  */
+document.addEventListener('DOMContentLoaded', () => {
+    // btn used to display the map
+    const showMap = document.getElementById('show_map');
+    showMap.addEventListener('click', () => {
+        document.getElementById('map').style.display = 'block';
+        showMap.style.display = 'none';
+    });
+});
 window.initMap = () => {
     fetchRestaurantFromURL((error, restaurant) => {
         if (error) {
@@ -24,7 +32,7 @@ window.initMap = () => {
 /**
  * Get current restaurant from page URL.
  */
-fetchRestaurantFromURL = callback => {
+const fetchRestaurantFromURL = callback => {
     if (self.restaurant) {
         // restaurant already fetched!
         callback(null, self.restaurant);
@@ -51,7 +59,7 @@ fetchRestaurantFromURL = callback => {
 /**
  * Create restaurant HTML and add it to the webpage
  */
-fillRestaurantHTML = (restaurant = self.restaurant) => {
+const fillRestaurantHTML = (restaurant = self.restaurant) => {
     const name = document.getElementById('restaurant-name');
     name.innerHTML = restaurant.name;
 
@@ -79,7 +87,7 @@ fillRestaurantHTML = (restaurant = self.restaurant) => {
 /**
  * Create restaurant operating hours HTML table and add it to the webpage.
  */
-fillRestaurantHoursHTML = (
+const fillRestaurantHoursHTML = (
     operatingHours = self.restaurant.operating_hours,
 ) => {
     const hours = document.getElementById('restaurant-hours');
@@ -101,7 +109,7 @@ fillRestaurantHoursHTML = (
 /**
  * Create all reviews HTML and add them to the webpage.
  */
-fillReviewsHTML = (reviews = self.restaurant.reviews) => {
+const fillReviewsHTML = (reviews = self.restaurant.reviews) => {
     const container = document.getElementById('reviews-container');
     const title = document.createElement('h3');
     title.innerHTML = 'Reviews';
@@ -131,7 +139,7 @@ const updateReviewsHTML = (reviews = self.restaurant.reviews) => {
 /**
  * Create review HTML and add it to the webpage.
  */
-createReviewHTML = review => {
+const createReviewHTML = review => {
     const li = document.createElement('li');
     const name = document.createElement('p');
     name.innerHTML = review.name;
@@ -151,7 +159,7 @@ createReviewHTML = review => {
 /**
  * Add restaurant name to the breadcrumb navigation menu
  */
-fillBreadcrumb = (restaurant = self.restaurant) => {
+const fillBreadcrumb = (restaurant = self.restaurant) => {
     const breadcrumb = document.getElementById('breadcrumb');
     const li = document.createElement('li');
     // for accessibility
@@ -166,7 +174,7 @@ fillBreadcrumb = (restaurant = self.restaurant) => {
 /**
  * Get a parameter by name from page URL.
  */
-getParameterByName = (name, url) => {
+const getParameterByName = (name, url) => {
     if (!url) url = window.location.href;
     name = name.replace(/[\[\]]/g, '\\$&');
     const regex = new RegExp(`[?&]${name}(=([^&#]*)|&|#|$)`),
@@ -183,13 +191,13 @@ addReviewButton.addEventListener('click', function() {
     let name = document.getElementById('user_name').value;
     let rating = document.getElementById('rating').value;
     let comments = document.getElementById('user_comment').value;
-    if(!name.trim() || !rating || !comments.trim()) {
-        alert('please add correct values then submit again') ;
-        return ;
+    if (!name.trim() || !rating || !comments.trim()) {
+        alert('please add correct values then submit again');
+        return;
     }
-    if (parseInt(rating)>5 || parseInt(rating) < 0){
-        alert('rating value show be from 0 to 5') ;
-        return ;
+    if (parseInt(rating) > 5 || parseInt(rating) < 0) {
+        alert('rating value show be from 0 to 5');
+        return;
     }
     const review = { name, rating, comments };
 

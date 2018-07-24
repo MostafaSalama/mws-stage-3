@@ -6,6 +6,13 @@ let selectFavorite = false;
  * Fetch neighborhoods and cuisines as soon as the page is loaded.
  */
 document.addEventListener('DOMContentLoaded', event => {
+    // button to click to show the google map
+    const showMap = document.getElementById('show_map');
+    showMap.addEventListener('click', () => {
+        document.getElementById('map').style.display = 'block';
+        showMap.style.display = 'none';
+    });
+
     fetchNeighborhoods();
     fetchCuisines();
     registerServiceWorker();
@@ -14,16 +21,16 @@ document.addEventListener('DOMContentLoaded', event => {
     register service worker function
  */
 const registerServiceWorker = () => {
-    /* if ('serviceWorker' in navigator) {
+    if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js').then(reg => {
             console.log('successful register the service worker');
         });
-    }*/
+    }
 };
 /**
  * Fetch all neighborhoods and set their HTML.
  */
-fetchNeighborhoods = () => {
+const fetchNeighborhoods = () => {
     DBHelper.fetchNeighborhoods((error, neighborhoods) => {
         if (error) {
             // Got an error
@@ -38,7 +45,7 @@ fetchNeighborhoods = () => {
 /**
  * Set neighborhoods HTML.
  */
-fillNeighborhoodsHTML = (neighborhoods = self.neighborhoods) => {
+const fillNeighborhoodsHTML = (neighborhoods = self.neighborhoods) => {
     const select = document.getElementById('neighborhoods-select');
     neighborhoods.forEach(neighborhood => {
         const option = document.createElement('option');
@@ -51,7 +58,7 @@ fillNeighborhoodsHTML = (neighborhoods = self.neighborhoods) => {
 /**
  * Fetch all cuisines and set their HTML.
  */
-fetchCuisines = () => {
+const fetchCuisines = () => {
     DBHelper.fetchCuisines((error, cuisines) => {
         if (error) {
             // Got an error!
@@ -66,7 +73,7 @@ fetchCuisines = () => {
 /**
  * Set cuisines HTML.
  */
-fillCuisinesHTML = (cuisines = self.cuisines) => {
+const fillCuisinesHTML = (cuisines = self.cuisines) => {
     const select = document.getElementById('cuisines-select');
 
     cuisines.forEach(cuisine => {
@@ -96,7 +103,7 @@ window.initMap = () => {
 /**
  * Update page and map for current restaurants.
  */
-updateRestaurants = () => {
+const updateRestaurants = () => {
     const cSelect = document.getElementById('cuisines-select');
     const nSelect = document.getElementById('neighborhoods-select');
 
@@ -124,9 +131,9 @@ updateRestaurants = () => {
  * get all the favorite restaurants or return all restaurants
  */
 const favoriteRestaurants = (restaurants = self.restaurants) => {
-    if (restaurants && selectFavorite){
-        console.log(`restaurants at favorits is `,restaurants);
-        return restaurants.filter(res => res.is_favorite==='true');
+    if (restaurants && selectFavorite) {
+        console.log(`restaurants at favorits is `, restaurants);
+        return restaurants.filter(res => res.is_favorite === 'true');
     }
     if (restaurants) return restaurants;
     return [];
@@ -139,7 +146,7 @@ const toggleVisibleRestaurants = event => {
     if (selectedIndex === 1) {
         selectFavorite = true;
         console.log(selectFavorite);
-        updateRestaurants()
+        updateRestaurants();
     } else if (selectedIndex === 0) {
         selectFavorite = false;
         updateRestaurants();
@@ -149,7 +156,7 @@ const toggleVisibleRestaurants = event => {
 /**
  * Clear current restaurants, their HTML and remove their map markers.
  */
-resetRestaurants = restaurants => {
+const resetRestaurants = restaurants => {
     // Remove all restaurants
     self.restaurants = [];
     const ul = document.getElementById('restaurants-list');
@@ -161,22 +168,73 @@ resetRestaurants = restaurants => {
     self.restaurants = restaurants;
 };
 
+// lazy load images
+
+function lazyImages() {
+    const images = document.querySelectorAll('img');
+
+    const options = {
+        // If the image gets within 50px in the Y axis, start the download.
+        root: null, // Page as root
+        rootMargin: '0px',
+        threshold: 0.1,
+    };
+
+    const fetchImage = url => {
+        console.log(url);
+        return new Promise((resolve, reject) => {
+            const image = new Image();
+            image.src = url;
+            image.onload = resolve;
+            image.onerror = reject;
+        });
+    };
+
+    const loadImage = image => {
+        const src = image.dataset.src;
+        fetchImage(src).then(() => {
+            // console.log(src)
+            image.src = src;
+        });
+    };
+
+    const handleIntersection = (entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.intersectionRatio > 0) {
+                console.log(entry.intersectionRatio);
+                loadImage(entry.target);
+            }
+        });
+    };
+
+    // The observer for the images on the page
+    const observer = new IntersectionObserver(handleIntersection, options);
+
+    images.forEach(img => {
+        observer.observe(img);
+    });
+}
+
 /**
  * Create all restaurants HTML and add them to the webpage.
  */
-fillRestaurantsHTML = (restaurants = favoriteRestaurants(self.restaurants)) => {
-    console.log(`updating`,restaurants);
+
+const fillRestaurantsHTML = (
+    restaurants = favoriteRestaurants(self.restaurants),
+) => {
+    console.log(`updating`, restaurants);
     const ul = document.getElementById('restaurants-list');
     restaurants.forEach(restaurant => {
         ul.append(createRestaurantHTML(restaurant));
     });
+    lazyImages();
     addMarkersToMap(restaurants);
 };
 
 /**
  * Create restaurant HTML.
  */
-createRestaurantHTML = restaurant => {
+const createRestaurantHTML = restaurant => {
     const li = document.createElement('li');
 
     const image = document.createElement('img');
@@ -184,7 +242,7 @@ createRestaurantHTML = restaurant => {
     image.alt = `${restaurant.name} restaurant, address ${
         restaurant.address
     }, ${restaurant.cuisine_type} cuisine`;
-    image.src = DBHelper.imageUrlForRestaurant(restaurant);
+    image.setAttribute('data-src', DBHelper.imageUrlForRestaurant(restaurant));
     li.append(image);
 
     const name = document.createElement('h3');
@@ -228,7 +286,9 @@ createRestaurantHTML = restaurant => {
 /**
  * Add markers for current restaurants to the map.
  */
-addMarkersToMap = (restaurants = favoriteRestaurants(self.restaurants)) => {
+const addMarkersToMap = (
+    restaurants = favoriteRestaurants(self.restaurants),
+) => {
     restaurants.forEach(restaurant => {
         // Add marker to the map
         const marker = DBHelper.mapMarkerForRestaurant(restaurant, self.map);

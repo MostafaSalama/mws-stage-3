@@ -1,84 +1,178 @@
-const CACHE_NAME = 'restaurants-v6';
-const filesToCahce = [
-    '/img/smallimg/1.jpg',
-    '/img/smallimg/2.jpg',
-    '/img/smallimg/3.jpg',
-    '/img/smallimg/4.jpg',
-    '/img/smallimg/5.jpg',
-    '/img/smallimg/6.jpg',
-    '/img/smallimg/7.jpg',
-    '/img/smallimg/8.jpg',
-    '/img/smallimg/9.jpg',
-    '/img/smallimg/10.jpg',
-    '/img/1.jpg',
-    '/img/2.jpg',
-    '/img/3.jpg',
-    '/img/4.jpg',
-    '/img/5.jpg',
-    '/img/6.jpg',
-    '/img/7.jpg',
-    '/img/8.jpg',
-    '/img/9.jpg',
-    '/img/10.jpg',
-    '/dist/mainIndex.min.js',
-    '/dist/restaurant.min.js',
-    '/icons/favicon.png',
-    '/icons/plate-fork-and-knife50x50.png',
-    '/icons/plate-fork-and-knife128x128.png',
-    '/icons/plate-fork-and-knife152x152.png',
-    '/icons/plate-fork-and-knife192x192.png',
-    '/icons/plate-fork-and-knife512.png',
-    '/index.html',
-    '/restaurant.html?id=1',
-    '/restaurant.html?id=2',
-    '/restaurant.html?id=3',
-    '/restaurant.html?id=4',
-    '/restaurant.html?id=5',
-    '/restaurant.html?id=6',
-    '/restaurant.html?id=7',
-    '/restaurant.html?id=8',
-    '/restaurant.html?id=9',
-    '/restaurant.html?id=10',
-    '/'
-];
-self.addEventListener('install', event => {
-    event.waitUntil(
-        caches.open(CACHE_NAME).then(cache => {
-            return cache.addAll(filesToCahce);
+importScripts('https://storage.googleapis.com/workbox-cdn/releases/3.3.0/workbox-sw.js');
+
+const version = 'pwa-1';
+
+if (workbox) {
+    console.log(`[DEBUG] Workbox is loaded.`);
+
+    // Debugging Workbox
+    // Force development builds
+    // workbox.setConfig({ debug: true });
+    // The most verbose - displays all logs.
+    // workbox.core.setLogLevel(workbox.core.LOG_LEVELS.debug);
+    // Force production builds
+    workbox.setConfig({ debug: false });
+
+    // Custom Cache Names
+    // https://developers.google.com/web/tools/workbox/guides/configure-workbox
+    workbox.core.setCacheNameDetails({
+        prefix: 'pwa',
+        suffix: 'v2'
+    });
+    // The precacheAndRoute method of the precaching module takes a precache
+    // "manifest" (a list of file URLs with "revision hashes") to cache on service
+    // worker installation. It also sets up a cache-first strategy for the
+    // specified resources, serving them from the cache by default.
+    // In addition to precaching, the precacheAndRoute method sets up an implicit
+    // cache-first handler.
+    workbox.precaching.precacheAndRoute([
+        {
+            "url": "index.html",
+            "revision": "ef670755dbcc97695fa3499b2f86be37"
+        },
+        {
+            "url": "js/main.bundle.js",
+            "revision": "e7cbbd9bd232fbde1045de54cc87a9d7"
+        },
+        {
+            "url": "js/restaurant.bundle.js",
+            "revision": "555c3ccb217558e07ceb5fde039bf37f"
+        },
+        {
+            "url": "restaurant.html",
+            "revision": "c1b187a43faf371622ee632bc834ccd7"
+        },
+        {
+            "url": "manifest.json",
+            "revision": "70734e689aa308ac55dbc2638265dd5e"
+        }
+    ]);
+    // Google Fonts
+    // https://developers.google.com/web/tools/workbox/guides/common-recipes#google_fonts
+    // https://developers.google.com/web/tools/workbox/modules/workbox-strategies#cache_first_cache_falling_back_to_network
+    workbox.routing.registerRoute(
+        new RegExp('https://fonts.(?:googleapis|gstatic).com/(.*)'),
+        workbox.strategies.cacheFirst({
+            cacheName: 'pwa-cache-googleapis',
+            plugins: [
+                new workbox.expiration.Plugin({
+                    maxEntries: 30,
+                    maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
+                }),
+                new workbox.cacheableResponse.Plugin({
+                    statuses: [0, 200]
+                }),
+            ],
+        }),
+    );
+
+
+    // Images
+    // https://developers.google.com/web/tools/workbox/modules/workbox-strategies#cache_first_cache_falling_back_to_network
+    // https://developers.google.com/web/tools/workbox/modules/workbox-cache-expiration
+    // Whenever the app requests images, the service worker checks the
+    // cache first for the resource before going to the network.
+    // A maximum of 60 entries will be kept (automatically removing older
+    // images) and these files will expire in 30 days.
+    workbox.routing.registerRoute(
+        /\.(?:png|gif|jpg|jpeg|svg|webp)$/,
+        workbox.strategies.cacheFirst({
+            cacheName: 'pwa-cache-images',
+            plugins: [
+                new workbox.expiration.Plugin({
+                    maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
+                }),
+            ],
+        }),
+    );
+
+
+    // Cache CSS and JavaScript files that aren't precached.
+    // https://developers.google.com/web/tools/workbox/modules/workbox-strategies#stale-while-revalidate
+    workbox.routing.registerRoute(
+        /\.(?:js|css)$/,
+        workbox.strategies.staleWhileRevalidate({
+            cacheName: 'pwa-cache-static-resources',
+        }),
+    );
+
+
+    // Restaurants
+    // https://developers.google.com/web/tools/workbox/modules/workbox-strategies#network_first_network_falling_back_to_cache
+    // http://localhost:8887/restaurant.html?id=1
+    workbox.routing.registerRoute(
+        new RegExp('restaurant.html(.*)'),
+        workbox.strategies.networkFirst({
+            cacheName: 'pwa-cache-restaurants',
+            // Status 0 is the response you would get if you request a cross-origin
+            // resource and the server that you're requesting it from is not
+            // configured to serve cross-origin resources.
+            cacheableResponse: {statuses: [0, 200]}
         })
     );
-});
-self.addEventListener('fetch', event => {
-        event.respondWith(
-            caches.match(event.request).then(res => {
-                return (
-                    res ||
-                    fetch(event.request).then(response => {
-                        return caches.open(CACHE_NAME).then(cache => {
-                            cache.add(event.request, response.clone());
-                            return response;
-                        });
-                    }).catch(()=>{
-                        return caches.match('/index.html')
-                    })
-                );
-            })
-        );
 
-});
-self.addEventListener('activate', function(event) {
-
-    var cacheWhitelist = [CACHE_NAME];// Version for your cache list
-
-    event.waitUntil(
-        caches.keys().then(function(cacheNames) {
-            return Promise.all(
-                cacheNames.map(function(cacheName) {
-                    if (!cacheWhitelist.includes(cacheName)) {
-                        return caches.delete(cacheName);
-                    }
-                })
-            );
+    // Reviews
+    // https://developers.google.com/web/tools/workbox/modules/workbox-strategies#stale-while-revalidate
+    // Use cache but update in the background ASAP.
+    // http://localhost:8887/review.html?id=1
+    workbox.routing.registerRoute(
+        new RegExp('review.html(.*)'),
+        workbox.strategies.cacheFirst({
+            cacheName: 'pwa-cache-restaurants',
+            // Status 0 is the response you would get if you request a cross-origin
+            // resource and the server that you're requesting it from is not
+            // configured to serve cross-origin resources.
+            cacheableResponse: {statuses: [0, 200]}
         })
     );
-});
+
+    // Notifications
+    const showNotification = () => {
+        self.registration.showNotification('Background Sync', {
+            body: 'Success!'
+        });
+    };
+
+    // Background Sync using workbox-background-sync
+    // https://developers.google.com/web/updates/2015/12/background-sync
+    // https://developers.google.com/web/tools/workbox/modules/workbox-background-sync
+    // https://codelabs.developers.google.com/codelabs/workbox-indexeddb/
+
+    // If a user tries to add an event while offline, the failed endpoint request
+    // will be saved in the background sync queue. When the user returns online,
+    // the queued requests are re-sent even if the app is closed!
+
+    // Create a Workbox Background Sync Queue, initialize backgroundSync plugin.
+    // Background sync needs to create a Queue, represented by an IndexedDB
+    // database, that is used to store failed HTTP requests.
+
+    const bgSyncPlugin = new workbox.backgroundSync.Plugin(
+        'pwa-reviews-queue',
+        {
+            maxRetentionTime: 24 * 60, // Retry for max of 24 Hours
+        },
+        {
+            callbacks: {
+                queueDidReplay: showNotification
+                // other types of callbacks could go here
+            }
+        }
+    );
+
+    // The plugin is added to the configuration of a handler,
+    // networkWithBackgroundSync.
+    const networkWithBackgroundSync = new workbox.strategies.NetworkOnly({
+        plugins: [bgSyncPlugin],
+    });
+
+    // POST review
+    // http://localhost:1337/reviews/
+    workbox.routing.registerRoute(
+        new RegExp('http://localhost:1337/reviews/'),
+        networkWithBackgroundSync,
+        'POST'
+    );
+
+} else {
+    console.log(`[DEBUG] Workbox didn't load.`);
+}
